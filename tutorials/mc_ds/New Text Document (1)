@@ -1,0 +1,12 @@
+host adapt.nccs.nasa.gov discover.nccs.nasa.gov discover-nastran.nccs.nasa.gov dirac.nccs.nasa.gov dataportal.nccs.nasa.gov
+User ssenthil
+LogLevel Quiet
+ProxyCommand ssh -l ssenthil login.nccs.nasa.gov direct %h
+Protocol 2
+
+ 
+
+
+Host *
+   PKCS11Provider="C:\Program Files\HID Global\ActivClient\acpkcs211.dll"
+   User ssenthil

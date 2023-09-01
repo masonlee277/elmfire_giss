@@ -1,0 +1,2 @@
+icase,Meteorology band,x,y,tstop (h),Wall clock time (s),Total fire area (ac),Crown fire area (ac),Fire volume (ac-ft),Population affected,Real estate value,Land value,Nembers,Pyrome,Containfrac,PM 2.5 release (ug),HRR peak (MW),Start timestamp,Fire id
+      1,    1,       0.00,       0.00,   96.52,  44.6000,      29214.9,      16465.0,     197228.8,         -1.0,         -1.0,         -1.0, 136803,  1,-9999.000,0.000E+00,0.000E+00,1970-01-01 00:00,0000001

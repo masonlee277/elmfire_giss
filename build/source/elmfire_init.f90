@@ -612,6 +612,7 @@ CONTINUE
 END FUNCTION CALC_WIND_ADJUSTMENT_FACTOR_SINGLE
 ! *****************************************************************************
 
+
 ! *****************************************************************************
 SUBROUTINE READ_FUEL_MODEL_TABLE
 ! *****************************************************************************
@@ -629,6 +630,12 @@ ALLOCATE(FUEL_MODEL_TABLE(0:NUM_FUEL_MODELS))
 FUEL_MODEL_TABLE(:)%SHORTNAME='NULL' !Initialize fuel model names
 
 FNINPUT = TRIM(MISCELLANEOUS_INPUTS_DIRECTORY) // TRIM(FUEL_MODEL_FILE)
+
+
+OPEN(UNIT=10,FILE='FM_Calculated_Values.txt', STATUS='UNKNOWN')
+OPEN(UNIT=9,FILE='FM_Sig.txt', STATUS='UNKNOWN')
+
+WRITE(*,*) 'Created Txt File'
 
 !Attempt to open fuel model table file:
 OPEN(LUINPUT,FILE=TRIM(FNINPUT),FORM='FORMATTED',STATUS='OLD',IOSTAT=IOS)
@@ -651,6 +658,14 @@ DO WHILE (IOS .EQ. 0)
    FM%ETAS   = 0.174/(FM%SE**0.19) !Mineral damping coefficient, dimensionless
 
    IF (IOS .EQ. 0) FUEL_MODEL_TABLE(INUM) = FM
+
+   !WRITE(10, '(A,F5.2)') ' FM%W1: ',  FM%W0(1) !
+   !WRITE(10, '(A,F5.2)') ' FM%W2: ',  FM%W0(2) !
+   !WRITE(10, '(A,F5.2)') ' FM%W3: ',  FM%W0(3) !
+   !WRITE(10, '(A,F5.2)') ' FM%W4: ',  FM%W0(4) !
+   !WRITE(10, '(A,F5.2)') ' FM%W5: ',  FM%W0(5) !
+   WRITE(10, *) ' FM%SIG(1): ', FM%SIG(1), ' FM%SIG(2): ', FM%SIG(2), ' FM%SIG(3): ', FM%SIG(3), ' FM%SIG(4): ', FM%SIG(4), ' FM%SIG(5): ', FM%SIG(5), ' FM%SIG(6): ', FM%SIG(6), ' FM%W0(4): ', FM%W0(4), ' FM%W0(5): ', FM%W0(5), ' FM%W0(6): ', FM%W0(6)
+
 ENDDO
 CLOSE(LUINPUT)
 
@@ -716,6 +731,19 @@ DO INUM = 0, NUM_FUEL_MODELS
       FM%BETA        = SUM(FM%W0(1:6)) / (FM%DELTA * FM%RHOP)
       FM%BETAOP      = 3.348/(FM%SIG_OVERALL**0.8189)
       FM%RHOB        = SUM(FM%W0(1:6)) / FM%DELTA
+
+      !!!save 
+      WRITE(10, '(A)') '********************'
+
+      !WRITE(10, '(A,F5.2)') 'FM%SIG_DEAD: ', FM%SIG_DEAD
+      !WRITE(10, '(A,F5.2)') 'FM%SIG_LIVE: ', FM%SIG_LIVE
+      !WRITE(10, '(A,F5.2)') 'FM%SIG_OVERALL: ', FM%SIG_OVERALL
+      !PRINT *, 'Fuel_Model',  INUM, 'FM%SIG_DEAD: ', FM%SIG_DEAD, '  FM%SIG_LIVE: ', FM%SIG_LIVE, '  FM%SIG_OVERALL: ', FM%SIG_OVERALL
+      !WRITE(10, '(A,*)') 'Fuel_Model',  INUM, 'FM%SIG_DEAD: ', FM%SIG_DEAD, '  FM%SIG_LIVE: ', FM%SIG_LIVE, '  FM%SIG_OVERALL: ', FM%SIG_OVERALL
+      !WRITE(9, '(A,*)') 'Fuel_Model:  ', INUM, 'FM%SIG_DEAD: ', FM%SIG_DEAD, '  FM%SIG_LIVE: ', FM%SIG_LIVE, '  FM%SIG_OVERALL: ', FM%SIG_OVERALL
+      WRITE(9, *) 'Fuel_Model:  ', INUM, ' FM%SIG_DEAD: ', FM%SIG_DEAD, ' FM%SIG_LIVE: ', FM%SIG_LIVE, ' FM%SIG_OVERALL: ', FM%SIG_OVERALL, ' FM%SIG(1): ', FM%SIG(1), ' FM%SIG(2): ', FM%SIG(2), ' FM%SIG(3): ', FM%SIG(3), ' FM%SIG(4): ', FM%SIG(4), ' FM%SIG(5): ', FM%SIG(5), ' FM%SIG(6): ', FM%SIG(6), ' FM%W0(4): ', FM%W0(4), ' FM%W0(5): ', FM%W0(5), ' FM%W0(6): ', FM%W0(6)
+
+      
    
       FM%XI = EXP((0.792 + 0.681*SQRT(FM%SIG_OVERALL))*(0.1+FM%BETA)) / (192. + 0.2595*FM%SIG_OVERALL)
    
@@ -754,9 +782,58 @@ DO INUM = 0, NUM_FUEL_MODELS
 
       FUEL_MODEL_TABLE_2D(INUM,ILH) = FM
 
+      !Write calculated FM values into the file. Adjust this according to your needs.
+      WRITE(10, *) 'Ok Current Cell: (', INUM, ',', ILH, ')'
+      WRITE(10, '(A)') 'FM%SHORTNAME: ' // TRIM(FM%SHORTNAME)
+      WRITE(10, '(A,F5.2)') ' FM%W1: ',  FM%W0(1) !
+      WRITE(10, '(A,F5.2)') ' FM%W2: ',  FM%W0(2) !
+      WRITE(10, '(A,F5.2)') ' FM%W3: ',  FM%W0(3) !
+      WRITE(10, '(A,F5.2)') ' FM%W4: ',  FM%W0(4) !
+      WRITE(10, '(A,F5.2)') ' FM%W5: ',  FM%W0(5) !
+
+      WRITE(10, '(A,F5.2)') 'FM%DELTA: ', FM%DELTA !
+      WRITE(10, '(A,F5.2)') 'FM%MEX_DEAD: ', FM%MEX_DEAD !
+      WRITE(10, '(A,F5.2)') 'FM%MEX_LIVE: ', FM%MEX_LIVE !
+      WRITE(10, '(A,F5.2)') 'FM%HOC: ', FM%HOC !
+      WRITE(10, '(A,F5.2)') 'FM%RHOB: ', FM%RHOB !
+      WRITE(10, '(A,F5.2)') 'FM%ST: ', FM%ST !
+     
+      WRITE(10, '(A,F5.2)') 'FM%BETA: ', FM%BETA !
+      WRITE(10, '(A,F5.2)') 'FM%XI: ', FM%XI !
+      WRITE(10, '(A,F5.2)') 'FM%W0_DEAD: ', FM%W0_DEAD !
+      WRITE(10, '(A,F5.2)') 'FM%W0_LIVE: ', FM%W0_LIVE !
+      WRITE(10, '(A,F5.2)') 'FM%WN_DEAD: ', FM%WN_DEAD !
+      WRITE(10, '(A,F5.2)') 'FM%WN_LIVE: ', FM%WN_LIVE !
+
+
+
+      !WRITE(10, '(A)') 'FM%DYNAMIC: ' // LOGICAL_STRING(FM%DYNAMIC)
+      !WRITE(10, '(A,F5.2)') 'FM%RHOP: ', FM%RHOP
+      !WRITE(10, '(A,F5.2)') 'FM%BETAOP: ', FM%BETAOP 
+      !WRITE(10, '(A,F5.2)') 'FM%SE: ', FM%SE
+      !WRITE(10, '(A,F5.2)') 'FM%ETAS: ', FM%ETAS
+      !WRITE(10, '(A,F5.2)') 'FM%A_COEFF: ', FM%A_COEFF
+      !WRITE(10, '(A,F5.2)') 'FM%B_COEFF: ', FM%B_COEFF
+      !WRITE(10, '(A,F5.2)') 'FM%C_COEFF: ', FM%C_COEFF
+      !WRITE(10, '(A,F5.2)') 'FM%E_COEFF: ', FM%E_COEFF
+      !WRITE(10, '(A,F5.2)') 'FM%GAMMAPRIME: ', FM%GAMMAPRIME
+      !WRITE(10, '(A,F5.2)') 'FM%GAMMAPRIMEPEAK: ', FM%GAMMAPRIMEPEAK
+      !WRITE(10, '(A,F5.2)') 'FM%A_DEAD: ', FM%A_DEAD
+      !WRITE(10, '(A,F5.2)') 'FM%A_LIVE: ', FM%A_LIVE
+      !WRITE(10, '(A,F5.2)') 'FM%A_OVERALL: ', FM%A_OVERALL
+      !WRITE(10, '(A,F5.2)') 'FM%F_DEAD: ', FM%F_DEAD
+      !WRITE(10, '(A,F5.2)') 'FM%F_LIVE: ', FM%F_LIVE
+      !WRITE(10, '(A,F5.2)') 'FM%TR: ', FM%TR
+
+
    ENDDO
 
 ENDDO
+
+
+PRINT *, 'Closing 9' 
+CLOSE(UNIT=9)
+CLOSE(UNIT=10)
 
 !Set any unused fuel models to 256 (NB)
 DO INUM = 0, NUM_FUEL_MODELS
@@ -800,6 +877,9 @@ IF (.NOT. ALLOCATED(LOW_FROM_WSMFEFF)) THEN
 
 ENDIF
 
+!PRINT*, "Calling Fuel Model Save 1: FUCK YOU!!!!!"
+! CALL WRITE_FUEL_MODEL_TABLE_1(FUEL_MODEL_TABLE_2D)
+
 ! *****************************************************************************
 END SUBROUTINE READ_FUEL_MODEL_TABLE
 ! *****************************************************************************
@@ -840,6 +920,8 @@ IOS = 0
 DO WHILE (IOS .EQ. 0)
    READ(LUINPUT,*,IOSTAT=IOS) INUM,SHORTNAME,T_1MW,T_EARLY,T_FULLDEV,T_DECAY,FUEL_LOAD,HRRPUA_PEAK,FTP_CRIT,ABSORPTIVITY,HEIGHT,NONBURNABLE_FRAC
    IF (IOS .EQ. 0 .AND. INUM .GE. 0 .AND. INUM .LE. NUM_BUILDING_FUEL_MODELS) THEN
+
+
       BUILDING_FUEL_MODEL_TABLE(INUM)%SHORTNAME        = SHORTNAME
       BUILDING_FUEL_MODEL_TABLE(INUM)%T_1MW            = T_1MW
       BUILDING_FUEL_MODEL_TABLE(INUM)%T_EARLY          = T_EARLY

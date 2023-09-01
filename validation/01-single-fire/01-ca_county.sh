@@ -22,7 +22,7 @@ export CALC_FITNESS=yes
 # No need to modify from here down:
 
 cp -f ../template.sh ./run.sh
-rm -f -r ./$FIRENAME*
+rm -f -r ./ca-county_20180701_062200
 
 ./run.sh $YEAR $FIRENAME $ACTIVE_FIRE_TIMESTAMP_NUM \
          $ALREADY_BURNED_TIMESTAMP_NUM \

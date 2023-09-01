@@ -1,0 +1,34 @@
+import os
+from qgis.core import QgsRasterLayer, QgsVectorLayer, QgsProject
+import os
+import subprocess
+from pathlib import Path
+print('Hello')
+# Change these paths as per your requirement
+input_dir = Path('C:/Users/mnlee2/Desktop/linux_shell/elmfire/tutorials/mc_ds/inputs_1000M')
+output_dir = Path('C:/Users/mnlee2/Desktop/linux_shell/elmfire/tutorials/mc_ds/inputs_1000M_fixed1')
+
+output_dir.mkdir(parents=True, exist_ok=True)  # Create the output directory if it does not exist
+
+# List all geotiff files in the input directory
+geotiff_files = list(input_dir.glob('*.tif'))
+
+for geotiff_file in geotiff_files:
+    #
+
+    # Construct output file path
+    output_file = output_dir / geotiff_file.name
+    
+    # Construct the gdalwarp command
+    command = [
+        'gdalwarp', '-overwrite', '-s_srs', 'EPSG:32611', '-r', 'near', '-of', 'GTiff',
+        '-tr', '30', '30',  # Add this to set output resolution to 30, 30
+        '-co', 'COMPRESS=DEFLATE', '-co', 'ZLEVEL=9',  # Add these flags for compression and compression level
+        str(geotiff_file), str(output_file)
+    ]
+
+
+    # Execute the command
+    subprocess.run(command, check=True)
+
+print(f"Processed {len(geotiff_files)} geotiff files.")

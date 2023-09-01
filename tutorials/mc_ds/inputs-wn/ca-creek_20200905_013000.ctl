@@ -1,0 +1,16 @@
+FIRE_NAME                      = ca-creek
+INITIALIZATION_TIME            = 2020-09-05 01:30 UTC
+IGNITION_LON                   = -119.272
+IGNITION_LAT                   = 37.201
+IGNITION_RADIUS                = 300.0
+INITIALIZATION_TYPE            = points_within_polygon
+ELMFIRE_RUN_HOURS              = 96
+NORTH_BUFFER_KM                = 30
+EAST_BUFFER_KM                 = 30
+WEST_BUFFER_KM                 = 30
+SOUTH_BUFFER_KM                = 30
+NUM_ENSEMBLE_MEMBERS           = 200
+USE_SPECIFIC_FORECAST_CYCLE    = no
+SETUP_CALIBRATION_POLYGONS     = no
+SETUP_BARRIER_POLYGONS         = no
+FORECAST_OR_HINDCAST           = hindcast
