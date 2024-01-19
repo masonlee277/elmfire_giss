@@ -1,0 +1,216 @@
+#!/bin/bash
+
+## SBATCH --job-name=elmfire_run
+## SBATCH --output=elmfire_run_%j.out
+## SBATCH --ntasks=1
+## SBATCH --cpus-per-task=64
+## SBATCH --time=01:00:00
+## SBATCH --mem-per-cpu=4G
+
+################################################
+### RUN_ELMFIRE.sh function header:
+
+
+: <<COMMENT 
+   Here is a detailed description of the wildfire simulation script:
+
+    Overview:
+    This bash script runs the wildfire simulation model ELMFIRE to generate spatially explicit
+    wildfire spread simulations and outputs. It takes a set of input parameters and data,
+    configures and executes the ELMFIRE model, and processes the outputs.
+
+    Inputs:
+    - Input directory (INPUTS): This contains all the input data needed to run ELMFIRE,
+      including terrain/fuels maps, weather data, ignition location etc.
+    
+    - Run number (RUN_NUMBER): A unique identifier for each run.
+   
+   
+    Hardcoded Parameters (manually change):
+      - Domain size (DOMAINSIZE): Sets the size of the computational domain.
+      - Simulation duration (seconds) (SIMULATION_TSTOP): Controls the length of the simulation.
+
+   ###############
+
+   The script also takes in arrays of parameter values that can be used to run Monte Carlo
+   simulations sampling across a range of values.
+
+    
+      In your script RUN_ELMFIRE.sh, data is taken from a CSV file using the PARAM_VALUES array and 
+      positions defined for specific parameters. Let me explain how this works step by step:
+
+      Parameter Values in CSV:
+      The CSV file contains rows of parameter values that correspond to different simulation runs. 
+      Each row represents a set of input values for running the wildfire simulation. These parameter 
+      values determine how the simulation is configured, including factors like wind speed, crown 
+      fire model, spotting parameters, and more.
+
+      Defining Positions:
+      To extract these parameter values, you use an array called PARAM_VALUES. In this array, 
+      each element corresponds to a parameter value from a specific column in the CSV file. The 
+      positions of these elements in the array are important because they determine which 
+      parameter value from the CSV corresponds to each position. For example, if the first
+      element of PARAM_VALUES corresponds to the wind speed, the second to the wind direction, 
+      and so on, you need to define these positions correctly.
+
+      #IMPORTANT TO NOTE THAT THE CSV CONFIGURATION CAN BE CHANGED BUT THE INDEXING MUCH CHANGE ACCORDINLY
+
+      The spotting configurations are the first parameters of the CSV:
+      {pos: 1, param: CROWN_FIRE_SPOTTING_PERCENT_MIN}
+      {pos: 2, param: CROWN_FIRE_SPOTTING_PERCENT_MAX}
+      {pos: 3, param: ENABLE_SURFACE_FIRE_SPOTTING}
+      {pos: 4, param: GLOBAL_SURFACE_FIRE_SPOTTING_PERCENT_MIN}
+      {pos: 5, param: GLOBAL_SURFACE_FIRE_SPOTTING_PERCENT_MAX}
+      {pos: 6, param: CRITICAL_SPOTTING_FIRELINE_INTENSITY}
+      {pos: 7, param: SPOTTING_DISTRIBUTION_TYPE}
+      {pos: 8, param: MEAN_SPOTTING_DIST_MIN}
+      {pos: 9, param: MEAN_SPOTTING_DIST_MAX}
+      {pos: 10, param: NORMALIZED_SPOTTING_DIST_VARIANCE_MIN}
+      {pos: 11, param: NORMALIZED_SPOTTING_DIST_VARIANCE_MAX}
+      {pos: 12, param: SPOT_WS_EXP_LO}
+      {pos: 13, param: SPOT_WS_EXP_HI}
+      {pos: 14, param: SPOT_FLIN_EXP_LO}
+      {pos: 15, param: SPOT_FLIN_EXP_HI}
+      {pos: 16, param: NEMBERS_MIN}
+      {pos: 17, param: NEMBERS_MAX_LO}
+      {pos: 18, param: NEMBERS_MAX_HI}
+      {pos: 19, param: PIGN_MIN}
+      {pos: 20, param: PIGN_MAX}
+
+      ### End of Spotting Configurations
+      {pos: 21, param: CROWN_FIRE_MODEL}
+      {pos: 22, param: INPUT_DIR}
+      {pos: 23, param: WIND_SPEED}
+      {pos: 24, param: WIND_DIRECTION}
+      {pos: 25, param: CC}
+      {pos: 26, param: CBH}
+      {pos: 27, param: CBD}
+      {pos: 28, param: CH}
+      {pos: 29, param: M1}
+      {pos: 30, param: M10}
+      {pos: 31, param: M100}
+      {pos: 32, param: Run Number}
+
+      Here's how you define these positions:
+         CROWN_FIRE_MODEL_POS=-12
+         INPUT_DIR_POS=-11
+         WIND_SPEED_POS=-10
+         WIND_DIRECTION_POS=-9
+         CC_POS=-8
+         CBH_POS=-7
+         CBD_POS=-6
+         CH_POS=-5
+         M1_POS=-4
+         M10_POS=-3
+         M100_POS=-2
+         RUN_NUMBER_POS=-1 
+
+    Workflow:
+    - Set up directory structure and copy inputs
+      - Create scratch, misc and output directories
+      - Copy fuel model lookup table
+      - Copy input data into scratch directory
+    
+    - Configure ELMFIRE input file
+      - Set domain bounds, grid cell size, spatial reference etc based on input terrain data
+      - Set the run-specific parameters like crown model, wind, moisture etc.
+      - Set output directory to run-specific output dir
+      - Set spotting parameters
+    
+    - Execute ELMFIRE model
+      - Run ELMFIRE using MPI or single core
+      - Run using Parallel Processing or Sequentially
+      - Save input file copy to outputs
+    
+    - Process outputs
+      - Convert native BIL outputs to GeoTIFF
+      - Move outputs to run-specific output directory
+      - Rename time of arrival outputs with run identifier
+      ##
+         Main Output Directory ($OUTPUTS):
+            This directory contains subdirectories for each individual simulation run. Each subdirectory is named based on the specific parameters of that run. The main output directory might also contain other related information or scripts.
+
+         Simulation Run Subdirectories ($OUTPUTS/<RUN_NAME>):
+            Each simulation run is saved in its own subdirectory, where <RUN_NAME> is a name constructed based on the input parameters. These subdirectories contain various files and data generated during the simulation. The subdirectory structure might look like:
+      
+         outputs/
+            ├── run_name_1/
+               ├── coeffs.csv
+               ├── crown_fire_0000001.tif
+               ├── fire_size_stats.csv
+               ├── flin_0000001_0347445.tif
+               ├── run_name_1-elmfire.data
+               ├── time_of_arrival_0000001_0347445.tif
+               ├── timings_gs611-hammer.giss.nasa.gov.csv
+               ├── toa_0001_0000001.bin
+               └── vs_0000001_0347445.tif
+
+            ....
+            
+            ├── run_name_n/
+
+         
+         ## The toa is folder is used in some post processing functions like
+         ## IOU.py to calculate the burned areas
+         toa/
+          ├── run_name_1_time_of_arrival.tif
+          ├── run_name_1-elmfire.data
+
+          ...
+          ├── run_name_n_time_of_arrival.tif
+          ├── run_name_n-elmfire.data
+
+            
+      ##
+
+
+    - Post-processing
+      - Extract wall clock run time
+      - Append to copied input file in outputs
+    
+    This allows running multiple simulations in sequence, configured with different parameters
+    each time. The output data is organized by run name/number for easy comparison.
+COMMENT
+
+
+################################################
+function echo_values {
+   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+   echo 'Echo Values: ' 
+   echo "Run: $1"    
+   echo "Output Run: $2"  
+   echo "Output : $3"    
+   echo "MISC: $4"  
+   echo "Scratch: $5"
+   echo "Inputs: $6"
+
+   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
+   echo "***************************"
+   echo "Parameters"
+   #cat $5/elmfire.data
+}
+
+function process_output_files {
+   # Postprocess
+   for f in $1/*.bil; do
+      gdal_translate -a_srs "$A_SRS" -co "COMPRESS=DEFLATE" -co "ZLEVEL=9" $f $1/`basename $f | cut -d. -f1`.tif
+   done
+
+   # Define array of file extensions
+   file_extensions=("tif" "csv" "bin" "data" "bil" "hdr" )
+
+   # Loop over each file extension and move the files from ./outputs to the current run's directory
+   for ext in "${file_extensions[@]}"; do
+      mv ./outputs/*.${ext} $2 2>/dev/null
+   done
+
+   # Get the absolute path of the TOA folder
+   TOA=$(realpath $3)
+
+   # Loop over each file in $OUTPUTS_RUN
+   for file in $2/time_of_arrival_*.{tif,bil,hdr}; do
+      # Extract the filename
+      fil

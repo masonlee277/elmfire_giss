@@ -54,8 +54,29 @@
 # Organization: [NASA GISS]
 # Version: 1.0
 ################################################################################
+# Source .bashrc to load environment variables
+source ~/.bashrc
 
-# Begin specifying inputs
+# Check if ELMFIRE_BASE_DIR is set
+if [ -z "$ELMFIRE_BASE_DIR" ]; then
+  echo "ELMFIRE_BASE_DIR is not set. Please set it in your .bashrc file."
+  exit 1
+else
+  echo "ELMFIRE_BASE_DIR is: $ELMFIRE_BASE_DIR"
+fi
+
+# Set the path to run_elmfire.sh
+RUN_ELMFIRE_SCRIPT="$ELMFIRE_BASE_DIR/tutorials/mc_ds/run_elmfire.sh"
+echo "Expected location of run_elmfire.sh: $RUN_ELMFIRE_SCRIPT"
+
+# Check if the script exists
+if [ ! -f "$RUN_ELMFIRE_SCRIPT" ]; then
+  echo "run_elmfire.sh not found at the expected location: $RUN_ELMFIRE_SCRIPT"
+  exit 1
+fi
+
+# Export RUN_ELMFIRE_SCRIPT so it's available in process_line
+export RUN_ELMFIRE_SCRIPT
 
 #CELLSIZE=30.0 # Grid size in meters
 DOMAINSIZE=12000.0 # Height and width of domain in meters
@@ -91,8 +112,21 @@ process_line() {
 
   #If this is define other than . you need to export the path to PATH
   echo "deploying Using Script"
-  ./run_elmfire.sh $SCONFIG "${PARAM_VALUES[@]}" 
+  # dos2unix $ELMFIRE_BASE_DIR/run_elmfire.sh 
+  # $ELMFIRE_BASE_DIR/run_elmfire.sh $SCONFIG "${PARAM_VALUES[@]}" 
   
+  # Ensure the script is executable
+  if [ -f "$RUN_ELMFIRE_SCRIPT" ]; then
+      echo "Expected location of run_elmfire.sh: $RUN_ELMFIRE_SCRIPT"
+      chmod +x "$RUN_ELMFIRE_SCRIPT"
+  else
+      echo "Error: run_elmfire.sh not found at $RUN_ELMFIRE_SCRIPT"
+  fi
+
+  # Now run the script
+  $RUN_ELMFIRE_SCRIPT "$SCONFIG" "${PARAM_VALUES[@]}"
+
+
   #echo "Running Using Slurm"
   #sbatch ./run_elmfire.sh $INPUTS $RUN_NUMBER $CROWN_FIRE_MODEL "${PARAM_VALUES[@]}"  ## Make sure to uncomment the run_elmfire.sh sbatch configs at the top 
 }
